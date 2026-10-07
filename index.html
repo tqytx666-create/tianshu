@@ -35,7 +35,7 @@
         border-radius:20px;padding:0 20px;font-size:15px;font-weight:600}
   #send:disabled{opacity:.45}
 </style></head><body>
-<header><h1>天 枢</h1><div class="sub" id="st">连接中…</div></header>
+<header><h1>天 枢</h1><nav style="display:flex;gap:4px"><a href="index.html" style="color:#241d0d;background:#d8b25c;font-weight:600;text-decoration:none;font-size:14px;padding:3px 12px;border-radius:14px">对话</a><a id="nb" href="board.html" style="color:#8a8578;text-decoration:none;font-size:14px;padding:3px 12px;border-radius:14px">看板</a></nav><div class="sub" id="st">连接中…</div></header>
 <div id="chat"></div>
 <footer>
   <textarea id="inp" rows="1" placeholder="说事、记账、提问,都行…"></textarea>
@@ -48,6 +48,7 @@ try { if (K) localStorage.setItem('ts_k', K); else K = localStorage.getItem('ts_
 var chat = document.getElementById('chat'), st = document.getElementById('st');
 var inp = document.getElementById('inp'), btn = document.getElementById('send');
 var lastSig = '';
+document.getElementById('nb').href='board.html'+(K?'?k='+encodeURIComponent(K):'');
 
 function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function md(s){

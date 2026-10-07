@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="zh-CN"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>天枢 · 看板</title>
+<style>
+  :root{--bg:#0a0a0d;--card:#16151a;--card2:#1d1c22;--gold:#d8b25c;--txt:#e8e6e1;--dim:#8a8578;--line:rgba(216,178,92,.18);
+        --red:#d9705f;--amber:#e0a84a;--green:#7fb78a;--blue:#7da7d9}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--txt);font:15px/1.55 -apple-system,"PingFang SC",sans-serif;min-height:100dvh;
+       padding-bottom:calc(40px + env(safe-area-inset-bottom))}
+  header{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line);
+         padding:12px 16px 10px;padding-top:calc(12px + env(safe-area-inset-top))}
+  .top{display:flex;align-items:center;gap:14px}
+  h1{font-size:19px;font-weight:600;background:linear-gradient(120deg,#f0d99a,#d8b25c,#f0d99a);
+     -webkit-background-clip:text;background-clip:text;color:transparent;white-space:nowrap}
+  nav{display:flex;gap:4px}
+  nav a{color:var(--dim);text-decoration:none;font-size:14px;padding:4px 12px;border-radius:14px}
+  nav a.on{color:#241d0d;background:var(--gold);font-weight:600}
+  .sum{margin-left:auto;font-size:12px;color:var(--dim);text-align:right}
+  .sum b{color:var(--txt);font-weight:600}
+  .add{display:flex;gap:8px;margin-top:10px}
+  .add input{flex:1;min-width:0;background:var(--card);border:1px solid var(--line);border-radius:18px;color:var(--txt);
+             padding:9px 14px;font-size:16px;outline:none}
+  .add button{flex:none;background:var(--gold);color:#241d0d;border:0;border-radius:18px;padding:0 16px;font-size:14px;font-weight:600}
+  main{padding:14px 14px 0;max-width:1500px;margin:0 auto}
+  .sec{font-size:13px;color:var(--dim);margin:6px 2px 8px;display:flex;align-items:center;gap:8px}
+  .sec b{color:var(--gold);font-weight:600}
+  .strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px;margin-bottom:16px}
+  .ask{border:1px solid rgba(217,112,95,.45);background:rgba(217,112,95,.07)}
+  .push{border:1px solid var(--line);background:rgba(216,178,92,.06)}
+  .cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:14px;align-items:start}
+  .col h2{font-size:14px;font-weight:600;color:var(--gold);margin:0 2px 8px;display:flex;justify-content:space-between;cursor:pointer}
+  .col h2 span{color:var(--dim);font-weight:400;font-size:12px}
+  .col.shut .cards{display:none}
+  .cards{display:flex;flex-direction:column;gap:8px;min-height:20px}
+  .c{background:var(--card);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:10px 12px;cursor:pointer}
+  .c.drag{opacity:.4}
+  .c.over{border-color:var(--gold)}
+  .c .nm{font-weight:600;font-size:15px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .c .st{font-size:13px;color:#c9c5bb;margin-top:2px}
+  .c .nx{font-size:13px;color:var(--gold);margin-top:3px}
+  .c .nx:before{content:"下一步 ";color:var(--dim)}
+  .c .ft{display:flex;gap:8px;align-items:center;margin-top:6px;font-size:12px;color:var(--dim)}
+  .tag{font-size:11px;padding:1px 8px;border-radius:9px;font-weight:500;white-space:nowrap}
+  .t-ask{background:rgba(217,112,95,.18);color:var(--red)}
+  .t-idea{background:rgba(125,167,217,.16);color:var(--blue)}
+  .t-stale{background:rgba(224,168,74,.16);color:var(--amber)}
+  .t-old{background:rgba(217,112,95,.16);color:var(--red)}
+  .t-ok{background:rgba(127,183,138,.15);color:var(--green)}
+  .t-pin{background:rgba(216,178,92,.18);color:var(--gold)}
+  .d{color:var(--dim)} .d.m{color:var(--amber)} .d.o{color:var(--red)}
+  .more{margin-top:10px;border-top:1px solid var(--line);padding-top:10px;cursor:default}
+  .asktxt{font-size:13px;color:var(--red);margin-bottom:8px}
+  .note{font-size:13px;color:var(--blue);margin-bottom:8px}
+  .tl{font-size:12px;color:var(--dim);margin-bottom:10px}
+  .tl div{padding:2px 0;border-left:2px solid var(--line);padding-left:8px;margin-left:2px}
+  .tl i{font-style:normal;color:var(--gold)}
+  .btns{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+  .btns button{background:var(--card2);color:var(--txt);border:1px solid var(--line);border-radius:14px;padding:5px 12px;font-size:13px}
+  .btns button.p{background:var(--gold);color:#241d0d;border-color:var(--gold);font-weight:600}
+  .nt{display:flex;gap:6px}
+  .nt input{flex:1;min-width:0;background:var(--bg);border:1px solid var(--line);border-radius:14px;color:var(--txt);padding:6px 12px;font-size:16px;outline:none}
+  .nt button{background:var(--card2);color:var(--gold);border:1px solid var(--line);border-radius:14px;padding:0 12px;font-size:13px}
+  .fold{margin-top:22px}
+  .fold summary{color:var(--dim);font-size:13px;cursor:pointer;margin-bottom:8px}
+  .empty{color:var(--dim);font-size:12px;padding:6px 2px}
+  #toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#2a2416;border:1px solid var(--line);
+         color:var(--gold);padding:8px 16px;border-radius:16px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none}
+  #toast.on{opacity:1}
+  @media (max-width:640px){
+    .sum{display:none}
+    .top{gap:8px}
+  }
+</style></head><body>
+<header>
+  <div class="top">
+    <h1>天 枢</h1>
+    <nav><a href="index.html" id="n1">对话</a><a href="board.html" class="on">看板</a></nav>
+    <div class="sum" id="sum"></div>
+  </div>
+  <div class="add"><input id="idea" placeholder="随手加个点子…(手机可点键盘上的话筒说)" enterkeyhint="send"><button id="addb">记下</button></div>
+</header>
+<main id="m"><div class="empty">加载中…</div></main>
+<div id="toast"></div>
+<script>
+var API='https://cmswoyiuoeqzeassubvw.supabase.co/functions/v1/tianshu-app';
+var K=new URLSearchParams(location.search).get('k')||'';
+try{ if(K) localStorage.setItem('ts_k',K); else K=localStorage.getItem('ts_k')||''; }catch(e){}
+document.getElementById('n1').href='index.html'+(K?'?k='+encodeURIComponent(K):'');
+var GRPS=['台球AI','3D建模','视频内容','直播与公司','其他','点子池'];
+var DATA={projects:[],log:[]}, open={}, shut={}, sig='';
+function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function days(iso){return Math.floor((Date.now()-new Date(iso).getTime())/864e5);}
+function ago(n){return n<=0?'今天':n+'天前';}
+function toast(t){var e=document.getElementById('toast');e.textContent=t;e.classList.add('on');setTimeout(function(){e.classList.remove('on');},1600);}
+function fmt(iso){var d=new Date(iso);return (d.getMonth()+1)+'-'+d.getDate();}
+
+function call(body){
+  return fetch(API+'?act=1&k='+encodeURIComponent(K),{method:'POST',body:JSON.stringify(body)})
+    .then(function(r){if(!r.ok)throw 0;return r.json();});
+}
+function act(id,action,text,msg){
+  call({id:id,action:action,text:text||''}).then(function(){toast(msg||'已记下');load(true);}).catch(function(){toast('没成功,再试一下');});
+}
+function card(p){
+  var n=days(p.last_touched), cls=n>=10?'o':n>=5?'m':'';
+  var tags='';
+  if(p.blocked_on_nange) tags+='<span class="tag t-ask">卡你这</span>';
+  if(p.status==='idea') tags+='<span class="tag t-idea">点子</span>';
+  if(p.pinned && p.status==='active') tags+='<span class="tag t-pin">加急</span>';
+  if(p.status==='active'&&n>=10) tags+='<span class="tag t-old">停了'+n+'天</span>';
+  else if(p.status==='active'&&n>=5) tags+='<span class="tag t-stale">'+n+'天没动</span>';
+  if(p.status==='done') tags+='<span class="tag t-ok">完成</span>';
+  if(p.status==='paused') tags+='<span class="tag t-idea">已停</span>';
+  var h='<div class="c" draggable="true" data-id="'+p.id+'" data-grp="'+esc(p.grp)+'">'
+    +'<div class="nm">'+esc(p.name)+tags+'</div>'
+    +(p.stage?'<div class="st">'+esc(p.stage)+'</div>':'')
+    +(p.next_step&&p.status!=='done'?'<div class="nx">'+esc(p.next_step)+'</div>':'')
+    +'<div class="ft"><span class="d '+cls+'">最后动 '+ago(n)+'</span></div>';
+  if(open[p.id]){
+    var lg=DATA.log.filter(function(x){return x.project_id===p.id;}).slice(0,8);
+    h+='<div class="more" onclick="event.stopPropagation()">';
+    if(p.ask) h+='<div class="asktxt">等你:'+esc(p.ask)+'</div>';
+    if(p.nange_note) h+='<div class="note">你留的话:'+esc(p.nange_note)+' <a href="#" onclick="act('+p.id+',\'clear_note\',\'\',\'已清除\');return false" style="color:var(--dim)">清除</a></div>';
+    h+='<div class="tl">'+(lg.length?lg.map(function(x){return '<div><i>'+fmt(x.at)+'</i> '+(x.who==='nange'?'你:':'')+esc(x.text)+'</div>';}).join(''):'暂无记录')+'</div>';
+    h+='<div class="btns">';
+    if(p.blocked_on_nange||p.ask) h+='<button class="p" onclick="act('+p.id+',\'decide\',\'\',\'已记:你拍板了\')">我拍板了 / 做完了</button>';
+    if(p.status==='paused'||p.status==='done'||p.status==='idea') h+='<button class="p" onclick="act('+p.id+',\'resume\',\'\',\'开始推进\')">'+(p.status==='idea'?'开干':'恢复')+'</button>';
+    if(p.status==='active'||p.status==='stalled'||p.status==='blocked') h+='<button onclick="act('+p.id+',\'boost\',\'\',\'已加急\')">加急</button><button onclick="act('+p.id+',\'pause\',\'\',\'先停了\')">先停</button><button onclick="act('+p.id+',\'done\',\'\',\'标记完成\')">完成</button>';
+    h+='<button onclick="mv('+p.id+',-1)">↑</button><button onclick="mv('+p.id+',1)">↓</button></div>';
+    h+='<div class="nt"><input id="nt'+p.id+'" placeholder="给我留一句话,我下次对话会看到" enterkeyhint="send"><button onclick="note('+p.id+')">留话</button></div>';
+    h+='</div>';
+  }
+  return h+'</div>';
+}
+function note(id){var v=document.getElementById('nt'+id).value.trim();if(!v)return;act(id,'note',v,'已留话');}
+function mv(id,d){
+  var p=DATA.projects.find(function(x){return x.id===id;});
+  var ids=DATA.projects.filter(function(x){return x.grp===p.grp&&!['done','paused'].includes(x.status);}).map(function(x){return x.id;});
+  var i=ids.indexOf(id), j=i+d; if(i<0||j<0||j>=ids.length)return;
+  ids.splice(j,0,ids.splice(i,1)[0]);
+  call({action:'reorder',ids:ids}).then(function(){load(true);});
+}
+function render(){
+  var P=DATA.projects, live=P.filter(function(p){return !['done','paused'].includes(p.status);});
+  var ask=live.filter(function(p){return p.blocked_on_nange||p.ask;});
+  var push=live.filter(function(p){return ['active','stalled'].includes(p.status)&&!p.blocked_on_nange;}).slice(0,3);
+  var cnt=function(f){return live.filter(f).length;};
+  document.getElementById('sum').innerHTML='进行中 <b>'+cnt(function(p){return p.status==='active';})+'</b> · 停滞 <b>'+
+    live.filter(function(p){return ['active','stalled'].includes(p.status)&&days(p.last_touched)>=5;}).length+'</b> · 卡你这 <b>'+ask.length+'</b> · 点子 <b>'+cnt(function(p){return p.status==='idea';})+'</b>';
+  var h='';
+  if(ask.length){h+='<div class="sec"><b>等你拍板 / 操作</b> '+ask.length+' 件</div><div class="strip">'+ask.map(function(p){return card(p).replace('class="c"','class="c ask"');}).join('')+'</div>';}
+  if(push.length){h+='<div class="sec"><b>今日先推</b> 按优先级自动选,拖动或「加急」可改</div><div class="strip">'+push.map(function(p){return card(p).replace('class="c"','class="c push"');}).join('')+'</div>';}
+  h+='<div class="sec"><b>全部项目</b> 拖动卡片可调顺序,点卡片展开</div><div class="cols">';
+  GRPS.forEach(function(g){
+    var items=live.filter(function(p){return p.grp===g;});
+    if(!items.length&&g!=='点子池')return;
+    h+='<div class="col'+(shut[g]?' shut':'')+'" data-g="'+g+'"><h2 onclick="shutg(\''+g+'\')">'+g+' <span>'+items.length+'</span></h2><div class="cards" data-g="'+g+'">'
+      +(items.length?items.map(card).join(''):'<div class="empty">空的,随手加点子进来</div>')+'</div></div>';
+  });
+  h+='</div>';
+  var rest=P.filter(function(p){return ['done','paused'].includes(p.status);});
+  if(rest.length) h+='<details class="fold"><summary>已完成 / 已暂停 ('+rest.length+')</summary><div class="strip">'+rest.map(card).join('')+'</div></details>';
+  var m=document.getElementById('m'), y=window.scrollY;
+  m.innerHTML=h; window.scrollTo(0,y);
+  bind();
+}
+function shutg(g){shut[g]=!shut[g];render();}
+function bind(){
+  document.querySelectorAll('.c').forEach(function(el){
+    el.onclick=function(){var id=+el.dataset.id;open[id]=!open[id];render();};
+    el.ondragstart=function(e){el.classList.add('drag');e.dataTransfer.setData('text/plain',el.dataset.id);};
+    el.ondragend=function(){el.classList.remove('drag');};
+    el.ondragover=function(e){e.preventDefault();el.classList.add('over');};
+    el.ondragleave=function(){el.classList.remove('over');};
+    el.ondrop=function(e){
+      e.preventDefault();el.classList.remove('over');
+      var from=+e.dataTransfer.getData('text/plain'), to=+el.dataset.id; if(from===to)return;
+      var pf=DATA.projects.find(function(x){return x.id===from;}), pt=DATA.projects.find(function(x){return x.id===to;});
+      if(pf.grp!==pt.grp){toast('只能在同一栏里排序');return;}
+      var ids=DATA.projects.filter(function(x){return x.grp===pt.grp&&!['done','paused'].includes(x.status);}).map(function(x){return x.id;});
+      ids.splice(ids.indexOf(from),1); ids.splice(ids.indexOf(to),0,from);
+      call({action:'reorder',ids:ids}).then(function(){load(true);});
+    };
+  });
+}
+function busy(){var a=document.activeElement;return a&&(a.tagName==='INPUT'||a.tagName==='TEXTAREA')&&a.value;}
+function load(force){
+  if(!force&&busy())return;
+  fetch(API+'?board=1&k='+encodeURIComponent(K)).then(function(r){if(!r.ok)throw 0;return r.json();}).then(function(d){
+    var s=JSON.stringify(d.projects.map(function(p){return [p.id,p.status,p.priority,p.last_touched,p.stage,p.next_step,p.ask,p.nange_note];}))+d.log.length;
+    if(!force&&s===sig)return; sig=s; DATA=d; render();
+  }).catch(function(){document.getElementById('m').innerHTML='<div class="empty">连不上,检查链接里的 k</div>';});
+}
+function addIdea(){
+  var i=document.getElementById('idea'), v=i.value.trim(); if(!v)return;
+  call({action:'add_idea',text:v}).then(function(){i.value='';toast('点子已进点子池');load(true);}).catch(function(){toast('没成功,再试一下');});
+}
+document.getElementById('addb').onclick=addIdea;
+document.getElementById('idea').addEventListener('keydown',function(e){if(e.key==='Enter')addIdea();});
+load(true); setInterval(load,20000);
+</script></body></html>
