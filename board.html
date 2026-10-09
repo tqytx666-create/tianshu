@@ -27,7 +27,7 @@
 
   .say{margin:20px 0 10px;background:var(--s1);border:1px solid var(--bd);border-radius:18px;padding:14px 14px 12px}
   .say:focus-within{border-color:var(--gold-bd)}
-  .say textarea{width:100%;background:none;border:0;outline:0;color:var(--tx);font:inherit;font-size:16px;line-height:1.6;resize:none;min-height:52px;max-height:160px;display:block}
+  .say textarea{width:100%;overflow-y:auto;background:none;border:0;outline:0;color:var(--tx);font:inherit;font-size:16px;line-height:1.6;resize:none;min-height:52px;max-height:38dvh;display:block}
   .say textarea::placeholder{color:var(--dim)}
   .say .bt{display:flex;align-items:center;gap:10px;margin-top:8px}
   .say .hint{flex:1;font-size:12px;color:var(--dim)}
@@ -35,6 +35,15 @@
   .mic svg{width:18px;height:18px}
   .mic.on{background:var(--red);color:#fff;animation:pulse 1.2s infinite}
   @keyframes pulse{50%{opacity:.7}}
+  .tools{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+  .tools button{background:var(--s2);color:var(--tx2);border:1px solid var(--bd);border-radius:14px;padding:5px 12px;font-size:13px}
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+  .chip{position:relative;width:64px;height:64px;border-radius:10px;overflow:hidden;border:1px solid var(--bd)}
+  .chip img{width:100%;height:100%;object-fit:cover;display:block}
+  .chip b{position:absolute;top:2px;right:2px;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,.7);color:#fff;font-size:13px;line-height:20px;text-align:center;font-weight:400;cursor:pointer}
+  .rel{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+  .rel a{background:var(--s2);border:1px solid var(--gold-bd);color:var(--gold);border-radius:12px;padding:3px 10px;font-size:13px;text-decoration:none;cursor:pointer}
+  .rel select{background:var(--bg);color:var(--tx2);border:1px solid var(--bd);border-radius:12px;padding:3px 8px;font-size:13px;max-width:150px}
   .go{background:var(--s2);color:var(--tx);border:1px solid var(--bd);border-radius:22px;height:44px;padding:0 20px;font-size:14px}
   .fb{margin:0 0 28px;display:flex;flex-direction:column;gap:8px}
   .fb div{font-size:13px;color:var(--tx2);background:var(--s1);border-radius:12px;padding:9px 14px}
@@ -137,6 +146,8 @@
 <div class="wrap">
   <div class="say">
     <textarea id="say" rows="2" placeholder="想到什么就说：任务进展、待办、点子、记账、提问都行，我来分"></textarea>
+    <div class="chips" id="chips"></div>
+    <div class="tools"><button id="pic">🖼 图片</button><button id="lnk">🔗 粘贴链接</button><input type="file" id="file" accept="image/*" multiple style="display:none"></div>
     <div class="bt"><span class="hint" id="hint">中英混着说：点输入框，用豆包输入法键盘上的话筒更准</span>
       <button class="go" id="go">发送</button>
       <button class="mic" id="mic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg><span id="miclb">网页语音</span></button>
@@ -155,7 +166,7 @@ try{ if(K) localStorage.setItem('ts_k',K); else K=localStorage.getItem('ts_k')||
 document.getElementById('n1').href='index.html'+(K?'?k='+encodeURIComponent(K):'');
 var GRPS=['台球AI','3D建模','视频内容','直播与公司','其他','点子池'];
 var DATA={projects:[],log:[],todos:[],inbox:[]}, shut={}, sig='', cur=null;
-var ST={active:'进行中',blocked:'卡住',stalled:'停滞',idea:'点子',paused:'已暂停',done:'已完成'};
+var ST={cancelled:'已取消',active:'进行中',blocked:'卡住',stalled:'停滞',idea:'点子',paused:'已暂停',done:'已完成'};
 function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function days(iso){return Math.floor((Date.now()-new Date(iso).getTime())/864e5);}
 function ago(n){return n<=0?'今天':n+'天前';}
@@ -168,7 +179,7 @@ function act(id,action,text,msg){call({id:id,action:action,text:text||''}).then(
 function dotCls(p){
   if(p.blocked_on_nange) return 'k';
   if(p.status==='idea') return 'd';
-  if(p.status==='done'||p.status==='paused') return 'x';
+  if(p.status==='done'||p.status==='paused'||p.status==='cancelled') return 'x';
   var n=days(p.last_touched); return n>=10?'o':n>=5?'m':'';
 }
 function foot(p){
@@ -176,6 +187,7 @@ function foot(p){
   if(p.blocked_on_nange) t='<span class="w">卡你这</span> · ';
   else if(p.status==='idea') t='点子 · ';
   else if(p.status==='paused') t='已暂停 · ';
+  else if(p.status==='cancelled') t='已取消 · ';
   else if(p.status==='done') t='已完成 · ';
   var late=(p.status==='active'||p.status==='stalled')&&!p.blocked_on_nange&&n>=5;
   return '<i class="'+dotCls(p)+'"></i><span>'+t+(late?'<span class="m">'+n+'天没动</span>':ago(n)+'动过')+'</span>';
@@ -191,7 +203,7 @@ function row(p,kind,i){
 }
 
 function render(){
-  var P=DATA.projects, live=P.filter(function(p){return p.status!=='done'&&p.status!=='paused';});
+  var P=DATA.projects, live=P.filter(function(p){return !['done','paused','cancelled'].includes(p.status);});
   var ask=live.filter(function(p){return p.blocked_on_nange||p.ask;});
   var push=live.filter(function(p){return (p.status==='active'||p.status==='stalled')&&!p.blocked_on_nange;}).slice(0,3);
   var late=live.filter(function(p){return (p.status==='active'||p.status==='stalled')&&days(p.last_touched)>=5;}).length;
@@ -209,8 +221,8 @@ function render(){
       +(items.length?items.map(card).join(''):'<div class="empty">空的，上面随手记一个</div>')+'</div></div>';
   });
   h+='</div>';
-  var rest=P.filter(function(p){return p.status==='done'||p.status==='paused';});
-  if(rest.length) h+='<details class="fold"><summary>已完成 / 已暂停（'+rest.length+'）</summary><div class="cols">'+rest.map(card).join('')+'</div></details>';
+  var rest=P.filter(function(p){return ['done','paused','cancelled'].includes(p.status);});
+  if(rest.length) h+='<details class="fold"><summary>已完成 / 已暂停 / 已取消（'+rest.length+'）</summary><div class="cols">'+rest.map(card).join('')+'</div></details>';
   var y=window.scrollY; document.getElementById('m').innerHTML=h; window.scrollTo(0,y); bind();
 }
 function dueTxt(t){
@@ -259,21 +271,28 @@ function sheet(id){
     h+='<div class="blk"><div class="k">来龙去脉</div><div class="tl" style="margin-top:8px">'
       +lg.map(function(x,i){return '<div class="'+(i===lg.length-1?'last':'')+(x.who==='nange'?' me':'')+'"><small>'+fmt(x.at)+'</small>'+(x.who==='nange'?'你：':'')+esc(x.text)+'</div>';}).join('')+'</div></div>';
   }
+  var rel=(p.related||[]).map(byId).filter(Boolean);
+  var others=DATA.projects.filter(function(x){return x.id!==p.id&&(p.related||[]).indexOf(x.id)<0;});
+  h+='<div class="blk"><div class="k">相关任务（双向链接）</div><div class="rel">'
+    +rel.map(function(r){return '<a onclick="sheet('+r.id+')">'+esc(r.name)+'</a><a onclick="unlink('+p.id+','+r.id+')" style="color:var(--dim);border-color:var(--bd);padding:3px 7px" title="取消关联">×</a>';}).join('')
+    +'<select id="lksel" onchange="linkTo('+p.id+',this.value)"><option value="">＋ 关联…</option>'+others.map(function(x){return '<option value="'+x.id+'">'+esc(x.name)+'</option>';}).join('')+'</select></div></div>';
   if(p.nange_note) h+='<div class="noted">你留的话：'+esc(p.nange_note)+'<a href="#" onclick="act('+p.id+',\'clear_note\',\'\',\'已清除\');return false">清除</a></div>';
   h+='<div class="acts">';
-  if(p.status==='paused'||p.status==='done'||p.status==='idea') h+='<button class="p" onclick="act('+p.id+',\'resume\',\'\',\'开始推进\')">'+(p.status==='idea'?'开干':'恢复')+'</button>';
+  if(p.status==='paused'||p.status==='done'||p.status==='idea'||p.status==='cancelled') h+='<button class="p" onclick="act('+p.id+',\'resume\',\'\',\'开始推进\')">'+(p.status==='idea'?'开干':'恢复')+'</button>';
   else h+='<button onclick="act('+p.id+',\'boost\',\'\',\'已加急\')">加急</button><button onclick="act('+p.id+',\'pause\',\'\',\'先停了\')">先停</button><button onclick="act('+p.id+',\'done\',\'\',\'标记完成\')">完成</button>';
-  h+='<span class="sp"></span><button onclick="mv('+p.id+',-1)" aria-label="上移">↑</button><button onclick="mv('+p.id+',1)" aria-label="下移">↓</button></div>';
+  h+=(p.status==='cancelled'?'':'<button onclick="if(confirm(\'确定取消这条吗？\'))act('+p.id+',\'cancel\',\'\',\'已取消\')">取消</button>')+'<span class="sp"></span><button onclick="mv('+p.id+',-1)" aria-label="上移">↑</button><button onclick="mv('+p.id+',1)" aria-label="下移">↓</button></div>';
   h+='<div class="nt"><input id="ntx" placeholder="给我留一句话，我下次对话会看到" enterkeyhint="send"><button onclick="note()">留话</button></div>';
   var s=document.getElementById('sheet'), top=s.scrollTop; s.innerHTML=h; s.scrollTop=top;
   document.getElementById('ov').classList.add('on');
   document.getElementById('ntx').onkeydown=function(e){if(e.key==='Enter')note();};
 }
+function linkTo(id,to){if(!to)return;call({id:id,action:'link',to:+to}).then(function(){toast('已关联');load(true);});}
+function unlink(id,to){call({id:id,action:'unlink',to:to}).then(function(){toast('已取消关联');load(true);});}
 function closeSheet(){cur=null;document.getElementById('ov').classList.remove('on');}
 function note(){var v=document.getElementById('ntx').value.trim();if(!v)return;act(cur,'note',v,'已留话');}
 function mv(id,d){
   var p=byId(id);
-  var ids=DATA.projects.filter(function(x){return x.grp===p.grp&&x.status!=='done'&&x.status!=='paused';}).map(function(x){return x.id;});
+  var ids=DATA.projects.filter(function(x){return x.grp===p.grp&&!['done','paused','cancelled'].includes(x.status);}).map(function(x){return x.id;});
   var i=ids.indexOf(id), j=i+d; if(i<0||j<0||j>=ids.length){toast(d<0?'已经在最前':'已经在最后');return;}
   ids.splice(j,0,ids.splice(i,1)[0]);
   call({action:'reorder',ids:ids}).then(function(){toast('顺序已调');load(true);});
@@ -291,7 +310,7 @@ function bind(){
       var from=+e.dataTransfer.getData('text/plain'), to=+el.dataset.id; if(from===to)return;
       var pf=byId(from), pt=byId(to);
       if(pf.grp!==pt.grp){toast('只能在同一栏里排序');return;}
-      var ids=DATA.projects.filter(function(x){return x.grp===pt.grp&&x.status!=='done'&&x.status!=='paused';}).map(function(x){return x.id;});
+      var ids=DATA.projects.filter(function(x){return x.grp===pt.grp&&!['done','paused','cancelled'].includes(x.status);}).map(function(x){return x.id;});
       ids.splice(ids.indexOf(from),1); ids.splice(ids.indexOf(to),0,from);
       call({action:'reorder',ids:ids}).then(function(){load(true);});
     };
@@ -305,18 +324,47 @@ function load(force){
   if(!force&&busy())return;
   fetch(API+'?board=1&k='+encodeURIComponent(K)).then(function(r){if(!r.ok)throw 0;return r.json();}).then(function(d){
     DATA.inbox=d.inbox; DATA.todos=d.todos; var pend=feed();
-    var s=JSON.stringify(d.projects.map(function(p){return [p.id,p.status,p.priority,p.last_touched,p.stage,p.next_step,p.ask,p.nange_note,p.what];}))+d.log.length+JSON.stringify(d.todos.map(function(t){return [t.id,t.done,t.title,t.due_at];}));
+    var s=JSON.stringify(d.projects.map(function(p){return [p.id,p.status,p.priority,p.last_touched,p.stage,p.next_step,p.ask,p.nange_note,p.what,(p.related||[]).join('.')];}))+d.log.length+JSON.stringify(d.todos.map(function(t){return [t.id,t.done,t.title,t.due_at];}));
     clearTimeout(window._pt); if(pend) window._pt=setTimeout(function(){load(true);},4000);
     if(!force&&s===sig)return; sig=s; DATA=d; render(); if(cur) sheet(cur);
   }).catch(function(){document.getElementById('m').innerHTML='<div class="empty">连不上，检查链接里的 k</div>';});
 }
 var sayEl=document.getElementById('say'), hint=document.getElementById('hint');
-function grow(){sayEl.style.height='auto';sayEl.style.height=Math.min(sayEl.scrollHeight,160)+'px';}
-sayEl.addEventListener('input',grow);
+function grow(){sayEl.style.height='auto';sayEl.style.height=Math.min(sayEl.scrollHeight,Math.round(window.innerHeight*0.38))+'px';sayEl.scrollTop=sayEl.scrollHeight;}
+sayEl.addEventListener('input',function(){grow();});
+var pics=[];
+function drawChips(){document.getElementById('chips').innerHTML=pics.map(function(p,i){return '<div class="chip"><img src="'+p.url+'"><b onclick="rmpic('+i+')">×</b></div>';}).join('');}
+function rmpic(i){URL.revokeObjectURL(pics[i].url);pics.splice(i,1);drawChips();}
+function shrink(file){return new Promise(function(ok){
+  var img=new Image(), u=URL.createObjectURL(file);
+  img.onload=function(){var m=1800,r=Math.min(1,m/Math.max(img.width,img.height)),c=document.createElement('canvas');c.width=Math.round(img.width*r);c.height=Math.round(img.height*r);
+    c.getContext('2d').drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(u);c.toBlob(function(b){ok(b||file);},'image/jpeg',0.86);};
+  img.onerror=function(){URL.revokeObjectURL(u);ok(file);}; img.src=u;});}
+document.getElementById('pic').onclick=function(){document.getElementById('file').click();};
+document.getElementById('file').onchange=function(){
+  Array.prototype.forEach.call(this.files,function(f){shrink(f).then(function(b){pics.push({blob:b,url:URL.createObjectURL(b)});drawChips();});});
+  this.value='';
+};
+sayEl.addEventListener('paste',function(e){
+  var items=(e.clipboardData||{}).items||[];
+  for(var i=0;i<items.length;i++){if(items[i].type.indexOf('image')===0){var f=items[i].getAsFile();shrink(f).then(function(b){pics.push({blob:b,url:URL.createObjectURL(b)});drawChips();});e.preventDefault();}}
+});
+document.getElementById('lnk').onclick=function(){
+  var ins=function(t){if(!t)return;sayEl.value+=(sayEl.value&&!/\s$/.test(sayEl.value)?' ':'')+t;grow();sayEl.focus();};
+  if(navigator.clipboard&&navigator.clipboard.readText){navigator.clipboard.readText().then(function(t){if(/https?:\/\//.test(t))ins(t);else{toast('剪贴板里没有链接，长按输入框粘贴');sayEl.focus();}}).catch(function(){toast('长按输入框粘贴链接');sayEl.focus();});}
+  else{toast('长按输入框粘贴链接');sayEl.focus();}
+};
 function send(){
-  var v=sayEl.value.trim(); if(!v)return;
-  fetch(API+'?send=1&src=board&k='+encodeURIComponent(K),{method:'POST',body:v}).then(function(r){if(!r.ok)throw 0;})
-    .then(function(){sayEl.value='';grow();toast('收到，我来分');load(true);}).catch(function(){toast('没发出去，再试一下');});
+  var v=sayEl.value.trim(); if(!v&&!pics.length)return;
+  var jobs=[], base=API.replace('tianshu-app','');
+  if(pics.length){
+    pics.forEach(function(p,i){
+      jobs.push(fetch(base+'ts-image?src=board&k='+encodeURIComponent(K)+'&note='+encodeURIComponent(i===0?v:''),{method:'POST',headers:{'Content-Type':'image/jpeg'},body:p.blob}).then(function(r){if(!r.ok)throw 0;}));
+    });
+  } else {
+    jobs.push(fetch(API+'?send=1&src=board&k='+encodeURIComponent(K),{method:'POST',body:v}).then(function(r){if(!r.ok)throw 0;}));
+  }
+  Promise.all(jobs).then(function(){sayEl.value='';grow();pics.forEach(function(p){URL.revokeObjectURL(p.url);});pics=[];drawChips();toast('收到，我来分');load(true);}).catch(function(){toast('没发出去，再试一下');});
 }
 document.getElementById('go').onclick=send;
 sayEl.addEventListener('keydown',function(e){if(e.key==='Enter'&&(e.metaKey||e.ctrlKey)){e.preventDefault();send();}});
@@ -327,7 +375,7 @@ document.getElementById('mic').onclick=function(){
   if(micOn){rec&&rec.stop();return;}
   rec=new SR(); rec.lang='zh-CN'; rec.interimResults=true; rec.continuous=true;
   var base=sayEl.value?sayEl.value+' ':'';
-  rec.onresult=function(e){var t='';for(var i=0;i<e.results.length;i++)t+=e.results[i][0].transcript;sayEl.value=base+t;grow();};
+  rec.onresult=function(e){var t='';for(var i=0;i<e.results.length;i++)t+=e.results[i][0].transcript;sayEl.value=base+t;grow();sayEl.setSelectionRange(sayEl.value.length,sayEl.value.length);};
   rec.onerror=function(e){toast(e.error==='not-allowed'?'没有麦克风权限，到浏览器设置里允许':'语音没识别到，再说一次');};
   rec.onstart=function(){micOn=true;b.classList.add('on');lb.textContent='说完点我';hint.textContent='在听…说完再点一下，自动发送';};
   rec.onend=function(){micOn=false;b.classList.remove('on');lb.textContent='网页语音';hint.textContent='中英混着说：点输入框，用豆包输入法键盘上的话筒更准';if(sayEl.value.trim())send();};
