@@ -107,6 +107,9 @@
   .askbox{background:rgba(224,128,111,.1);border:1px solid rgba(224,128,111,.3);border-radius:12px;padding:12px 14px;margin-bottom:16px}
   .askbox .k{font-size:12px;color:var(--red);margin-bottom:3px}
   .askbox .v{font-size:14.5px;margin-bottom:10px}
+  .advbox{background:rgba(216,178,92,.07);border:1px solid var(--gold-bd);border-radius:12px;padding:12px 14px;margin-bottom:16px}
+  .advbox .k{font-size:12px;color:var(--gold);margin-bottom:3px}
+  .advbox .v{font-size:14.5px;color:var(--tx)}
   .tl{border-left:1px solid var(--bd);margin:4px 0 0 4px;padding-left:16px}
   .tl div{position:relative;font-size:13.5px;color:var(--tx2);padding:0 0 12px}
   .tl div:before{content:"";position:absolute;left:-20px;top:7px;width:7px;height:7px;border-radius:50%;background:var(--s2);border:1px solid var(--dim)}
@@ -192,9 +195,10 @@ function foot(p){
   var late=(p.status==='active'||p.status==='stalled')&&!p.blocked_on_nange&&n>=5;
   return '<i class="'+dotCls(p)+'"></i><span>'+t+(late?'<span class="m">'+n+'天没动</span>':ago(n)+'动过')+'</span>';
 }
+function hasAdv(id){return (DATA.log||[]).some(function(x){return x.project_id===id&&/^建议：/.test(x.text||'');});}
 function card(p){
   var wh=p.what||p.stage||p.origin||'';
-  return '<div class="c" draggable="true" data-id="'+p.id+'"><div class="nm">'+esc(p.name)+'</div>'
+  return '<div class="c" draggable="true" data-id="'+p.id+'"><div class="nm">'+esc(p.name)+(hasAdv(p.id)?'<span style="color:var(--gold);font-size:12px"> ✦</span>':'')+'</div>'
     +(wh?'<div class="wh">'+esc(wh)+'</div>':'')+'<div class="ft">'+foot(p)+'</div></div>';
 }
 function row(p,kind,i){
@@ -265,6 +269,8 @@ function sheet(id){
   var n=days(p.last_touched), h='';
   h+='<div class="sh-top"><h3>'+esc(p.name)+'</h3><button class="x" aria-label="关闭" onclick="closeSheet()">×</button></div>';
   h+='<div class="stl"><b>'+(p.blocked_on_nange?'卡在你这':ST[p.status]||p.status)+'</b> · 最后动过：'+ago(n)+'</div>';
+  var adv=null; for(var i2=lg.length-1;i2>=0;i2--){if(/^建议：/.test(lg[i2].text||'')){adv=lg[i2];break;}}
+  if(adv) h+='<div class="advbox"><div class="k">参谋建议 · '+fmt(adv.at)+'</div><div class="v">'+esc(adv.text.replace(/^建议：/,''))+'</div></div>';
   if(p.ask) h+='<div class="askbox"><div class="k">在等你</div><div class="v">'+esc(p.ask)+'</div><div class="acts" style="margin:0;padding:0;border:0"><button class="p" onclick="act('+p.id+',\'decide\',\'\',\'已记：你拍板了\')">我拍板了 / 做完了</button></div></div>';
   h+=blk('这是什么',p.what)+blk('为什么做',p.origin)+blk('现在到哪了',p.stage)+blk('下一步',p.next_step,'nx');
   if(lg.length){
